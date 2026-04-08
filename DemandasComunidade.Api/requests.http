@@ -1,0 +1,11 @@
+### Criar uma nova demanda (Input)
+POST http://localhost:5188/demands
+Content-Type: application/json
+
+{
+  "title": "Asfalto cedendo",
+  "description": "Rua das Flores na altura do número 120 apresenta buraco profundo."
+}
+
+### Listar todas as demandas cadastradas
+GET http://localhost:5188/demands

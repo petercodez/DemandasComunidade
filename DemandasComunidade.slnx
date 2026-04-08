@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="DemandasComunidade.Api/DemandasComunidade.Api.csproj" />
+  <Project Path="DemandasComunidade.Tests/DemandasComunidade.Tests.csproj" />
+</Solution>
