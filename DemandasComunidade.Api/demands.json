@@ -3,6 +3,14 @@
     "Id": "43dcce31-1fa3-492c-9e64-afae3072370c",
     "Title": "Asfalto cedendo",
     "Description": "Rua das Flores na altura do n\u00FAmero 120 apresenta buraco profundo.",
+    "Location": null,
     "CreatedAt": "2026-04-08T21:02:03.6249534Z"
+  },
+  {
+    "Id": "8ac27655-ab71-465e-9fbb-6b8022d20fac",
+    "Title": "Poste de luz apagado",
+    "Description": "O poste na frente da padaria est\u00E1 sem luz h\u00E1 3 dias.",
+    "Location": "Pra\u00E7a da S\u00E9, S\u00E9 - S\u00E3o Paulo/SP",
+    "CreatedAt": "2026-05-12T22:10:32.5440837Z"
   }
 ]
