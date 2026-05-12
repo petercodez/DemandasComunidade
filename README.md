@@ -39,7 +39,7 @@ dotnet run --project DemandasComunidade.Api
 
 Após rodar o comando acima, observe no terminal a porta que foi gerada (por exemplo, http://localhost:5188). Para acessar o sistema corretamente, é necessário adicionar /swagger/index.html ao final da URL. Lembre-se de colocar a porta que apareceu no seu terminal.
 
-## Registro de uma nova demanda (POST)
+## 8. Registro de uma nova demanda (POST)
 A API possui uma integração automática que busca o endereço completo a partir do CEP informado. Para testar o envio:
 
 I. Na interface do Swagger, clique na faixa verde do endpoint POST /demands.
