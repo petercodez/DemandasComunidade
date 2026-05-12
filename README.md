@@ -30,3 +30,38 @@ Clone o repositório para o seu ambiente local:
 ```bash
 git clone https://github.com/petercodez/DemandasComunidade
 cd DemandasComunidade
+```
+## 7. Instruções de Uso
+Após entrar na pasta DemandasComunidade, basta executar o projeto:
+```bash
+dotnet run --project DemandasComunidade.Api
+```
+
+Após rodar o comando acima, observe no terminal a porta que foi gerada (por exemplo, http://localhost:5188). Para acessar o sistema corretamente, é necessário adicionar /swagger/index.html ao final da URL. Lembre-se de colocar a porta que apareceu no seu terminal.
+
+## Registro de uma nova demanda (POST)
+A API possui uma integração automática que busca o endereço completo a partir do CEP informado. Para testar o envio:
+
+I. Na interface do Swagger, clique na faixa verde do endpoint POST /demands.
+II. Clique no botão "Try it out" (canto superior direito da aba).
+III. Na área Request body, basta substituir os "strings" pelo seu texto. Exemplo:
+
+{
+  "title": "string",
+  "description": "string",
+  "cep": "string"
+}
+
+Para:
+
+{
+  "title": "Buraco na via principal",
+  "description": "Asfalto cedeu e está causando transtornos aos motoristas.",
+  "cep": "01001000"
+}
+
+Por fim, basta clicar no botão azul "Execute".
+
+Role um pouco para baixo até a área de Responses. Você verá o resultado 201 Created e notará que o sistema gerou o ID, a Data e preencheu a localização exata automaticamente ("Praça da Sé, Sé - São Paulo/SP").
+
+As adições estarão documentadas dentro do seu arquivo "demands.json", dentro da pasta DemandasComunidade.Api.
