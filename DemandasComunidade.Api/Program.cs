@@ -1,8 +1,11 @@
-using System.Text.Json;
-
-
+using DemandasComunidade.Api;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configuração do Banco de Dados (Supabase)
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("SupabaseConnection")));
 
 builder.Services.AddHttpClient();
 
@@ -17,25 +20,22 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-const string FilePath = "demands.json";
-
-// Garante que o arquivo JSON exista
-if (!File.Exists(FilePath))
+// ---------------------------------------------------------
+// GET /demands - LER DO BANCO DE DADOS
+// ---------------------------------------------------------
+app.MapGet("/demands", async (AppDbContext dbContext) =>
 {
-    File.WriteAllText(FilePath, "[]");
-}
-
-app.MapGet("/demands", async () =>
-{
-    var json = await File.ReadAllTextAsync(FilePath);
-    var demands = JsonSerializer.Deserialize<List<Demand>>(json) ?? new List<Demand>();
+    // Busca todas as demandas diretamente da tabela do PostgreSQL
+    var demands = await dbContext.Demands.ToListAsync();
     return Results.Ok(demands);
 });
 
-app.MapPost("/demands", async (DemandInput input, HttpClient httpClient) =>
+// ---------------------------------------------------------
+// POST /demands - SALVAR NO BANCO DE DADOS
+// ---------------------------------------------------------
+app.MapPost("/demands", async (DemandInput input, HttpClient httpClient, AppDbContext dbContext) =>
 {
     // Buscar os dados na Brasil API
-    // Requisição GET com base no CEP enviado pelo usuário
     var response = await httpClient.GetAsync($"https://brasilapi.com.br/api/cep/v1/{input.Cep}");
 
     // Se o CEP não existir (retornar 404) - barragem da requisição
@@ -46,27 +46,23 @@ app.MapPost("/demands", async (DemandInput input, HttpClient httpClient) =>
 
     // Conversão do JSON que a Brasil API devolveu para o record CepResponse
     var address = await response.Content.ReadFromJsonAsync<CepResponse>();
+    if (address == null) return Results.BadRequest("Erro ao processar endereço.");
 
     // String de endereço para salvar no banco
-    string localizacaoCompleta = $"{address!.Street}, {address.Neighborhood} - {address.City}/{address.State}";
-
-    // LER O BANCO DE DADOS
-    var json = await File.ReadAllTextAsync(FilePath);
-    var demands = JsonSerializer.Deserialize<List<Demand>>(json) ?? new List<Demand>();
+    string localizacaoCompleta = $"{address.Street}, {address.Neighborhood} - {address.City}/{address.State}";
 
     // CRIAR A DEMANDA
-    var newDemand = new Demand(
-        Guid.NewGuid(),
-        input.Title,
-        input.Description,
-        localizacaoCompleta,
-        DateTime.UtcNow
-    );
-
-    demands.Add(newDemand);
+    var newDemand = new Demand
+    {
+        Title = input.Title,
+        Description = input.Description,
+        Cep = input.Cep,
+        Location = localizacaoCompleta
+    };
 
     // SALVAR NO BANCO DE DADOS
-    await File.WriteAllTextAsync(FilePath, JsonSerializer.Serialize(demands, new JsonSerializerOptions { WriteIndented = true }));
+    dbContext.Demands.Add(newDemand);
+    await dbContext.SaveChangesAsync();
 
     // Retorna o status 201 Created com os dados gerados
     return Results.Created($"/demands/{newDemand.Id}", newDemand);
@@ -74,10 +70,12 @@ app.MapPost("/demands", async (DemandInput input, HttpClient httpClient) =>
 
 app.Run();
 
-// Modelos
+// ---------------------------------------------------------
+// MODELOS AUXILIARES
+// ---------------------------------------------------------
+
 // O que o usuário vai enviar no corpo do POST
 public record DemandInput(string Title, string Description, string Cep);
-public record Demand(Guid Id, string Title, string Description, string Location, DateTime CreatedAt);
 
 // Modelo que mapeia o JSON de resposta da Brasil API
 public record CepResponse(string Cep, string State, string City, string Neighborhood, string Street);
