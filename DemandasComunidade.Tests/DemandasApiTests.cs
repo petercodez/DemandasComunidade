@@ -1,11 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
-
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
+using DemandasComunidade.Api;
 
 namespace DemandasComunidade.Tests;
 
@@ -15,12 +16,29 @@ public class DemandApiTests : IClassFixture<WebApplicationFactory<Program>>
 
     public DemandApiTests(WebApplicationFactory<Program> factory)
     {
-        _factory = factory;
+        // Configura o servidor de testes uma única vez para todos os métodos
+        _factory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureTestServices(services =>
+            {
+                // 1. Remove a conexão real com o PostgreSQL (Supabase)
+                services.RemoveAll(typeof(DbContextOptions<AppDbContext>));
+
+                // 2. Cria um banco de dados temporário na memória RAM para os testes
+                services.AddDbContext<AppDbContext>(options =>
+                    options.UseInMemoryDatabase("TestDatabase_" + Guid.NewGuid().ToString()));
+
+                // 3. Configura o HttpClient para usar o Mock da Brasil API
+                services.AddHttpClient(Microsoft.Extensions.Options.Options.DefaultName)
+                    .ConfigurePrimaryHttpMessageHandler(() => new MockBrasilApiHandler());
+            });
+        });
     }
 
     [Fact]
     public async Task GetDemands_ReturnsSuccessAndCorrectContentType()
     {
+        // Arrange
         var client = _factory.CreateClient();
 
         // Act
@@ -35,15 +53,8 @@ public class DemandApiTests : IClassFixture<WebApplicationFactory<Program>>
     public async Task PostDemand_CreatesNewDemand()
     {
         // Arrange
-        var client = _factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureTestServices(services =>
-            {
-                services.AddHttpClient(Microsoft.Extensions.Options.Options.DefaultName)
-                        .ConfigurePrimaryHttpMessageHandler(() => new MockBrasilApiHandler());
-            });
-        }).CreateClient();
-
+        var client = _factory.CreateClient();
+        
         var newDemand = new
         {
             Title = "Buraco na via",
@@ -58,22 +69,12 @@ public class DemandApiTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
-    // ---------------------------------------------------------
-    // NOVO TESTE DE INTEGRAÇÃO: Valida o retorno da Brasil API
-    // ---------------------------------------------------------
     [Fact]
     public async Task PostDemand_ComCepValido_DeveRetornarCreatedEEnderecoPreenchido()
     {
         // Arrange
-        var client = _factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureTestServices(services =>
-            {
-                services.AddHttpClient(Microsoft.Extensions.Options.Options.DefaultName)
-                        .ConfigurePrimaryHttpMessageHandler(() => new MockBrasilApiHandler());
-            });
-        }).CreateClient();
-
+        var client = _factory.CreateClient();
+        
         var newDemand = new
         {
             Title = "Teste de Integração Mockado",
