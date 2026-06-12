@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Net;
 using System.Net.Http.Json;
 
@@ -7,7 +8,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Xunit;
 
@@ -23,15 +23,27 @@ public class DemandApiTests : IClassFixture<WebApplicationFactory<Program>>
         {
             builder.ConfigureTestServices(services =>
             {
-                // 1. Remove qualquer configuração antiga do PostgreSQL
-                services.RemoveAll(typeof(DbContextOptions<AppDbContext>));
-                services.RemoveAll(typeof(DbContextOptions));
+                // 1. Encontra e remove explicitamente o descritor do DbContextOptions
+                var dbContextDescriptor = services.SingleOrDefault(
+                    d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
+                if (dbContextDescriptor != null)
+                {
+                    services.Remove(dbContextDescriptor);
+                }
 
-                // 2. Adiciona o banco de dados temporário na memória RAM
+                // 2. Encontra e remove qualquer conexão de banco de dados (PostgreSQL) remanescente
+                var dbConnectionDescriptor = services.SingleOrDefault(
+                    d => d.ServiceType == typeof(DbConnection));
+                if (dbConnectionDescriptor != null)
+                {
+                    services.Remove(dbConnectionDescriptor);
+                }
+
+                // 3. Adiciona o banco de dados temporário na memória RAM de forma limpa
                 services.AddDbContext<AppDbContext>(options =>
                     options.UseInMemoryDatabase("TestDatabase_Demandas"));
 
-                // 3. Força a criação das tabelas na memória antes do teste rodar
+                // 4. Força a criação das tabelas na memória antes do teste rodar
                 var sp = services.BuildServiceProvider();
                 using (var scope = sp.CreateScope())
                 {
@@ -39,7 +51,7 @@ public class DemandApiTests : IClassFixture<WebApplicationFactory<Program>>
                     db.Database.EnsureCreated();
                 }
 
-                // 4. Configura o HttpClient para usar o Mock da Brasil API
+                // 5. Configura o HttpClient para usar o Mock da Brasil API
                 services.AddHttpClient(Microsoft.Extensions.Options.Options.DefaultName)
                     .ConfigurePrimaryHttpMessageHandler(() => new MockBrasilApiHandler());
             });
