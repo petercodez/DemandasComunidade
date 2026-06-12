@@ -1,4 +1,5 @@
 using DemandasComunidade.Api;
+
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

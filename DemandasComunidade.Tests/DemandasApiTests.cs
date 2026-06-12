@@ -1,12 +1,15 @@
 using System.Net;
 using System.Net.Http.Json;
+
+using DemandasComunidade.Api;
+
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.EntityFrameworkCore;
+
 using Xunit;
-using DemandasComunidade.Api;
 
 namespace DemandasComunidade.Tests;
 
@@ -54,7 +57,7 @@ public class DemandApiTests : IClassFixture<WebApplicationFactory<Program>>
     {
         // Arrange
         var client = _factory.CreateClient();
-        
+
         var newDemand = new
         {
             Title = "Buraco na via",
@@ -74,7 +77,7 @@ public class DemandApiTests : IClassFixture<WebApplicationFactory<Program>>
     {
         // Arrange
         var client = _factory.CreateClient();
-        
+
         var newDemand = new
         {
             Title = "Teste de Integração Mockado",
