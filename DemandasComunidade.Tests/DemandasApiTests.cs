@@ -19,19 +19,27 @@ public class DemandApiTests : IClassFixture<WebApplicationFactory<Program>>
 
     public DemandApiTests(WebApplicationFactory<Program> factory)
     {
-        // Configura o servidor de testes uma única vez para todos os métodos
         _factory = factory.WithWebHostBuilder(builder =>
         {
             builder.ConfigureTestServices(services =>
             {
-                // 1. Remove a conexão real com o PostgreSQL (Supabase)
+                // 1. Remove qualquer configuração antiga do PostgreSQL
                 services.RemoveAll(typeof(DbContextOptions<AppDbContext>));
+                services.RemoveAll(typeof(DbContextOptions));
 
-                // 2. Cria um banco de dados temporário na memória RAM para os testes
+                // 2. Adiciona o banco de dados temporário na memória RAM
                 services.AddDbContext<AppDbContext>(options =>
-                    options.UseInMemoryDatabase("TestDatabase_" + Guid.NewGuid().ToString()));
+                    options.UseInMemoryDatabase("TestDatabase_Demandas"));
 
-                // 3. Configura o HttpClient para usar o Mock da Brasil API
+                // 3. Força a criação das tabelas na memória antes do teste rodar
+                var sp = services.BuildServiceProvider();
+                using (var scope = sp.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    db.Database.EnsureCreated();
+                }
+
+                // 4. Configura o HttpClient para usar o Mock da Brasil API
                 services.AddHttpClient(Microsoft.Extensions.Options.Options.DefaultName)
                     .ConfigurePrimaryHttpMessageHandler(() => new MockBrasilApiHandler());
             });
