@@ -4,9 +4,20 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configuração do Banco de Dados (Supabase)
+// Configuração do Banco de Dados Inteligente
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("SupabaseConnection")));
+{
+    // Se o ambiente for "Testing", usa o banco em memória limpo
+    if (builder.Environment.EnvironmentName == "Testing")
+    {
+        options.UseInMemoryDatabase("DbTestes");
+    }
+    else
+    {
+        // Caso contrário (ambiente normal), usa o Supabase/PostgreSQL
+        options.UseNpgsql(builder.Configuration.GetConnectionString("SupabaseConnection"));
+    }
+});
 
 builder.Services.AddHttpClient();
 
