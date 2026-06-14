@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Demanda</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
+        .container { max-width: 400px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; }
+        label { font-weight: bold; display: block; margin-top: 10px; }
+        input, textarea { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; margin-top: 15px; font-size: 16px; cursor: pointer; }
+        button:hover { background-color: #218838; }
+        #mensagem { margin-top: 15px; text-align: center; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Registrar Demanda</h2>
+        <form id="demandaForm">
+            <label for="title">Título da Demanda</label>
+            <input type="text" id="title" placeholder="Ex: Buraco na rua" required>
+
+            <label for="description">Descrição</label>
+            <textarea id="description" rows="4" placeholder="Detalhes do problema..." required></textarea>
+
+            <label for="cep">CEP (somente números)</label>
+            <input type="text" id="cep" placeholder="Ex: 01001000" maxlength="8" required>
+
+            <button type="submit">Enviar Demanda</button>
+        </form>
+        <p id="mensagem"></p>
+    </div>
+
+    <script>
+        document.getElementById('demandaForm').addEventListener('submit', async function(e) {
+            e.preventDefault(); // Evita que a página recarregue
+
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            const cep = document.getElementById('cep').value;
+            const mensagemEl = document.getElementById('mensagem');
+
+            mensagemEl.style.color = 'blue';
+            mensagemEl.textContent = 'Enviando...';
+
+            try {
+                const response = await fetch('/demands', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, description, cep })
+                });
+
+                if (response.ok) {
+                    mensagemEl.style.color = 'green';
+                    mensagemEl.textContent = 'Demanda registrada com sucesso!';
+                    document.getElementById('demandaForm').reset(); // Limpa o formulário
+                } else {
+                    mensagemEl.style.color = 'red';
+                    mensagemEl.textContent = 'Erro ao registrar. Verifique o CEP.';
+                }
+            } catch (error) {
+                mensagemEl.style.color = 'red';
+                mensagemEl.textContent = 'Erro de comunicação com o servidor.';
+            }
+        });
+    </script>
+</body>
+</html>
